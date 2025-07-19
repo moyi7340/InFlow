@@ -1,0 +1,42 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies & build
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+      - name: Setup CocoaPods
+        run: |
+          cd ios
+          pod install
+      - name: Build .ipa
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath ${{ github.workspace }}/build/App.xcarchive \
+            archive
+          xcodebuild \
+            -exportArchive \
+            -archivePath ${{ github.workspace }}/build/App.xcarchive \
+            -exportOptionsPlist ios/exportOptions.plist \
+            -exportPath ${{ github.workspace }}/build/ipa
+      - uses: actions/upload-artifact@v3
+        with:
+          name: InFlowApp.ipa
+          path: build/ipa/*.ipa
