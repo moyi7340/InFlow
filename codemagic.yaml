@@ -1,0 +1,22 @@
+workflows:
+  build_ios:
+    name: Build iOS for InFlow
+    environment:
+      xcode: latest
+      vars:
+        APP_ID: "com.example.inflow"
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          npm run build
+          npx cap sync ios
+      - name: Build iOS app
+        script: |
+          cd ios
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath $CM_BUILD_DIR/build/App.xcarchive archive
+      - name: Export .ipa
+        script: |
+          xcodebuild -exportArchive -archivePath $CM_BUILD_DIR/build/App.xcarchive -exportOptionsPlist exportOptions.plist -exportPath $CM_BUILD_DIR/build/ipa
+    artifacts:
+      - build/ipa/*.ipa
